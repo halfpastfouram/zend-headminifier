@@ -1,0 +1,40 @@
+{
+  "name": "halfpastfouram/zend-headminifier",
+  "description": "ZF3 module for minifying head scripts and head links using matthiasmullie/minify",
+  "license": "AGPL 3.0",
+  "homepage": "https://github.com/halfpastfouram/zend-headminifier",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "type": "package",
+  "authors": [
+    {
+      "name": "Bob Kruithof"
+    }
+  ],
+  "require": {
+    "php": "^7.0",
+    "zendframework/zend-servicemanager": "3.3.2",
+    "matthiasmullie/minify": "1.3.59",
+    "zendframework/zend-view": "2.10.0",
+    "zendframework/zend-modulemanager": "2.8.2"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^1.11",
+    "squizlabs/php_codesniffer": "2.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Halfpastfour\\HeadMinifier\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Test\\": "test/"
+    }
+  },
+  "extra": [],
+  "scripts": {
+    "cs-check": "./vendor/bin/phpcs",
+    "cs-fix": "./vendor/bin/phpcbf"
+  }
+}
