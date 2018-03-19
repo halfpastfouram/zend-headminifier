@@ -33,7 +33,7 @@ return [
             'enabled'     => true,
             'directories' => [
                 'public' => './public',
-                'css'     => './public/css',
+                'css'    => './public/css',
                 'cache'  => './public/css',
             ],
         ],
