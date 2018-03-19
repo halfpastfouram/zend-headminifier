@@ -4,6 +4,7 @@ namespace Halfpastfour\HeadMinifier\Factory\View\Helper;
 
 use Halfpastfour\HeadMinifier\View\Helper\HeadLink;
 use Interop\Container\ContainerInterface;
+use Zend\Http\PhpEnvironment\Request;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
 /**
@@ -35,6 +36,14 @@ class HeadLinkFactory implements FactoryInterface
             throw new \Exception('Configuration not available.');
         }
 
-        return new HeadLink($config);
+        /** @var Request $request */
+        $request = $container->get('Request');
+        $baseUrl = '';
+
+        if ($request instanceof Request) {
+            $baseUrl = $request->getBasePath();
+        }
+
+        return new HeadLink($config, $baseUrl);
     }
 }

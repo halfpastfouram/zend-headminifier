@@ -4,6 +4,7 @@ namespace Halfpastfour\HeadMinifier\Factory\View\Helper;
 
 use Halfpastfour\HeadMinifier\View\Helper\HeadScript;
 use Interop\Container\ContainerInterface;
+use Zend\Http\PhpEnvironment\Request;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
 /**
@@ -35,6 +36,14 @@ class HeadScriptFactory implements FactoryInterface
             throw new \Exception('Configuration not available.');
         }
 
-        return new HeadScript($config);
+        /** @var Request $request */
+        $request = $container->get('Request');
+        $baseUrl = '';
+
+        if ($request instanceof Request) {
+            $baseUrl = $request->getBasePath();
+        }
+
+        return new HeadScript($config, $baseUrl);
     }
 }

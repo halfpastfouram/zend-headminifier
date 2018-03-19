@@ -17,13 +17,20 @@ class HeadScript extends \Zend\View\Helper\HeadScript
     private $options = [];
 
     /**
+     * @var string
+     */
+    private $baseUrl = '';
+
+    /**
      * HeadLink constructor.
      *
-     * @param array $config
+     * @param array  $config
+     * @param string $baseUrl
      */
-    public function __construct(array $config)
+    public function __construct(array $config, string $baseUrl)
     {
         $this->options = $config;
+        $this->baseUrl = $baseUrl;
 
         parent::__construct();
     }
@@ -50,7 +57,8 @@ class HeadScript extends \Zend\View\Helper\HeadScript
                 $items[] = $item;
                 continue;
             }
-            $localUri  = preg_replace('/\?.*/', '', $publicDir . @$item->attributes['src']);
+            $localUri  = str_replace($this->baseUrl, '',
+                preg_replace('/\?.*/', '', $publicDir . @$item->attributes['src']));
             $remoteUri = @$item->attributes['src'];
             $handle    = curl_init($remoteUri);
             curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
@@ -70,7 +78,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             array_map(function ($uri) use ($minifier) {
                 $minifier->add($uri);
             }, $cacheItems);
-            $minifier->minify($cacheDir . $minifiedFile);
+            $contents = $minifier->minify($cacheDir . $minifiedFile);
         }
 
         /** @noinspection PhpUndefinedMethodInspection */
@@ -90,7 +98,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
 
         $scripts = [
             $this->itemToString($this->createData('text/javascript', [
-                'src' => $jsDir . $minifiedFile,
+                'src' => $this->baseUrl . $jsDir . $minifiedFile,
             ]), $indent, $escapeStart, $escapeEnd),
         ];
 

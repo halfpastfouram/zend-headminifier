@@ -17,13 +17,20 @@ class HeadLink extends \Zend\View\Helper\HeadLink
     private $options = [];
 
     /**
+     * @var string
+     */
+    private $baseUrl = '';
+
+    /**
      * HeadLink constructor.
      *
-     * @param array $config
+     * @param array  $config
+     * @param string $baseUrl
      */
-    public function __construct(array $config)
+    public function __construct(array $config, string $baseUrl)
     {
         $this->options = $config;
+        $this->baseUrl = $baseUrl;
 
         parent::__construct();
     }
@@ -49,7 +56,7 @@ class HeadLink extends \Zend\View\Helper\HeadLink
             if (! $item->href || $item->type != 'text/css') {
                 continue;
             }
-            $localUri  = preg_replace('/\?.*/', '', $publicDir . $item->href);
+            $localUri  = str_replace($this->baseUrl, '', preg_replace('/\?.*/', '', $publicDir . $item->href));
             $remoteUri = $item->href;
             $handle    = curl_init($remoteUri);
             curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
@@ -81,7 +88,7 @@ class HeadLink extends \Zend\View\Helper\HeadLink
             $this->itemToString($this->createData([
                 'type'                  => 'text/css',
                 'rel'                   => 'stylesheet',
-                'href'                  => $cssDir . $minifiedFile,
+                'href'                  => $this->baseUrl . $cssDir . $minifiedFile,
                 'conditionalStylesheet' => false,
             ])),
         ];
