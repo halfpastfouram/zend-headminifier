@@ -1,7 +1,7 @@
 {
   "name": "halfpastfouram/zend-headminifier",
   "description": "ZF3 module for minifying head scripts and head links using matthiasmullie/minify",
-  "license": "AGPL 3.0",
+  "license": "AGPL-3.0-or-later",
   "homepage": "https://github.com/halfpastfouram/zend-headminifier",
   "minimum-stability": "dev",
   "prefer-stable": true,
