@@ -67,7 +67,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
             if (is_file($localUri)) {
                 $cacheItems[] = $localUri;
-            } elseif (($output = curl_exec($handle)) !== false) {
+            } elseif (curl_exec($handle) !== false) {
                 $cacheItems[] = $remoteUri;
             } elseif ($remoteUri || $item->source) {
                 $items[] = $item;

@@ -29,12 +29,11 @@ class HeadLinkFactory implements FactoryInterface
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
         $applicationConfig = (array)$container->get('config');
-        if (array_key_exists('minify_head', $applicationConfig)
-            && array_key_exists('script', $applicationConfig['minify_head'])) {
-            $config = $applicationConfig['minify_head']['link'];
-        } else {
+        if (! array_key_exists('minify_head', $applicationConfig)
+            && ! array_key_exists('script', $applicationConfig['minify_head'])) {
             throw new \Exception('Configuration not available.');
         }
+        $config = $applicationConfig['minify_head']['link'];
 
         /** @var Request $request */
         $request = $container->get('Request');
