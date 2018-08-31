@@ -57,8 +57,11 @@ class HeadScript extends \Zend\View\Helper\HeadScript
                 $items[] = $item;
                 continue;
             }
-            $localUri  = str_replace($this->baseUrl, '',
-                preg_replace('/\?.*/', '', $publicDir . @$item->attributes['src']));
+            $localUri  = str_replace(
+                $this->baseUrl,
+                '',
+                preg_replace('/\?.*/', '', $publicDir . @$item->attributes['src'])
+            );
             $remoteUri = @$item->attributes['src'];
             $handle    = curl_init($remoteUri);
             curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
