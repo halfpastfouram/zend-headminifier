@@ -84,13 +84,18 @@ class HeadLink extends \Zend\View\Helper\HeadLink
             $remoteUri = $item->href;
             $handle    = curl_init($remoteUri);
             curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+
             if (is_file($localUri)) {
                 $cacheItems[] = $localUri;
-            } elseif (curl_exec($handle) !== false) {
-                $cacheItems[] = $remoteUri;
-            } else {
-                $items[] = $item;
+                continue;
             }
+
+            if (curl_exec($handle) !== false) {
+                $cacheItems[] = $remoteUri;
+                continue;
+            }
+
+            $items[] = $item;
         }
 
         return $items;
