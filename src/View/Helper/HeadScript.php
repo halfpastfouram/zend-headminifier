@@ -81,7 +81,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             array_map(function ($uri) use ($minifier) {
                 $minifier->add($uri);
             }, $cacheItems);
-            $contents = $minifier->minify($cacheDir . $minifiedFile);
+            $minifier->minify($cacheDir . $minifiedFile);
         }
 
         /** @noinspection PhpUndefinedMethodInspection */
