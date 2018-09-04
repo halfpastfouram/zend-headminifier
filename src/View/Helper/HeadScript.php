@@ -154,6 +154,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             $scripts[] = $this->itemToString($item, $indent, $escapeStart, $escapeEnd);
         }
 
-        return $scripts;
+        // Make sure the scripts are in the correct order.
+        return array_reverse($scripts, true);
     }
 }
