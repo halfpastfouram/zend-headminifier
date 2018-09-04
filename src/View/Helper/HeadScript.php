@@ -47,11 +47,35 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             return parent::toString($indent);
         }
 
-        $items      = [];
         $cacheItems = [];
         $publicDir  = $this->options['directories']['public'];
         $cacheDir   = $this->options['directories']['cache'];
         $jsDir      = str_replace($publicDir, '', $cacheDir);
+        $items      = $this->processItems($publicDir, $cacheItems);
+
+        /** @noinspection PhpUndefinedMethodInspection */
+        $indent = (null !== $indent)
+            ? $this->getWhitespace($indent)
+            : $this->getIndent();
+
+        $identifier   = sha1(implode($cacheItems));
+        $minifiedFile = "/{$identifier}.min.js";
+        $scripts      = $this->minifyFile($minifiedFile, $cacheDir, $cacheItems)
+                             ->generateScripts($items, $jsDir, $minifiedFile, $indent);
+
+        /** @noinspection PhpUndefinedMethodInspection */
+        return $indent . implode($this->escape($this->getSeparator()) . $indent, $scripts);
+    }
+
+    /**
+     * @param string $publicDir
+     * @param array  $cacheItems
+     *
+     * @return array
+     */
+    private function processItems($publicDir, array &$cacheItems)
+    {
+        $items = [];
         foreach ($this as $item) {
             if ($item->type !== 'text/javascript' && (! @$item->attributes['src'] || ! $item->source)) {
                 $items[] = $item;
@@ -62,21 +86,39 @@ class HeadScript extends \Zend\View\Helper\HeadScript
                 '',
                 preg_replace('/\?.*/', '', $publicDir . @$item->attributes['src'])
             );
+
             $remoteUri = @$item->attributes['src'];
             $handle    = curl_init($remoteUri);
             curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+
             if (is_file($localUri)) {
                 $cacheItems[] = $localUri;
-            } elseif (curl_exec($handle) !== false) {
+                continue;
+            }
+
+            if (curl_exec($handle) !== false) {
                 $cacheItems[] = $remoteUri;
-            } elseif ($remoteUri || $item->source) {
+                continue;
+            }
+
+            if ($remoteUri || $item->source) {
                 $items[] = $item;
             }
         }
 
-        $identifier   = sha1(implode($cacheItems));
-        $minifiedFile = "/{$identifier}.min.js";
-        if (! is_file($minifiedFile)) {
+        return $items;
+    }
+
+    /**
+     * @param string $minifiedFile
+     * @param string $cacheDir
+     * @param array  $cacheItems
+     *
+     * @return $this
+     */
+    private function minifyfile($minifiedFile, $cacheDir, array $cacheItems)
+    {
+        if (! is_file($this->baseUrl . $minifiedFile)) {
             $minifier = new Minify\JS();
             array_map(function ($uri) use ($minifier) {
                 $minifier->add($uri);
@@ -84,18 +126,21 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             $minifier->minify($cacheDir . $minifiedFile);
         }
 
+        return $this;
+    }
+
+    /**
+     * @param array  $items
+     * @param string $jsDir
+     * @param string $minifiedFile
+     * @param string $indent
+     *
+     * @return array
+     */
+    private function generateScripts(array $items, $jsDir, $minifiedFile, $indent)
+    {
         /** @noinspection PhpUndefinedMethodInspection */
-        $indent = (null !== $indent)
-            ? $this->getWhitespace($indent)
-            : $this->getIndent();
-
-        if ($this->view) {
-            /** @noinspection PhpUndefinedMethodInspection */
-            $useCdata = $this->view->plugin('doctype')->isXhtml();
-        } else {
-            $useCdata = $this->useCdata;
-        }
-
+        $useCdata    = $this->view ? $this->view->plugin('doctype')->isXhtml() : $this->useCdata;
         $escapeStart = ($useCdata) ? '//<![CDATA[' : '//<!--';
         $escapeEnd   = ($useCdata) ? '//]]>' : '//-->';
 
@@ -109,7 +154,6 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             $scripts[] = $this->itemToString($item, $indent, $escapeStart, $escapeEnd);
         }
 
-        /** @noinspection PhpUndefinedMethodInspection */
-        return $indent . implode($this->escape($this->getSeparator()) . $indent, $scripts);
+        return $scripts;
     }
 }
