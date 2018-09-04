@@ -47,27 +47,11 @@ class HeadLink extends \Zend\View\Helper\HeadLink
             return parent::toString($indent);
         }
 
-        $items      = [];
         $cacheItems = [];
         $publicDir  = $this->options['directories']['public'];
         $cacheDir   = $this->options['directories']['cache'];
         $cssDir     = str_replace($publicDir, '', $cacheDir);
-        foreach ($this as $item) {
-            if (! $item->href || $item->type != 'text/css') {
-                continue;
-            }
-            $localUri  = str_replace($this->baseUrl, '', preg_replace('/\?.*/', '', $publicDir . $item->href));
-            $remoteUri = $item->href;
-            $handle    = curl_init($remoteUri);
-            curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
-            if (is_file($localUri)) {
-                $cacheItems[] = $localUri;
-            } elseif (($output = curl_exec($handle)) !== false) {
-                $cacheItems[] = $remoteUri;
-            } else {
-                $items[] = $item;
-            }
-        }
+        $items      = $this->processItems($publicDir, $cacheItems);
 
         /** @noinspection PhpUndefinedMethodInspection */
         $indent = (null !== $indent)
@@ -76,6 +60,56 @@ class HeadLink extends \Zend\View\Helper\HeadLink
 
         $identifier   = sha1(implode($cacheItems));
         $minifiedFile = "/{$identifier}.min.css";
+        $links        = $this->minifyFile($minifiedFile, $cacheDir, $cacheItems)
+                             ->generateLinks($items, $cssDir, $minifiedFile);
+
+        /** @noinspection PhpUndefinedMethodInspection */
+        return $indent . implode($this->escape($this->getSeparator()) . $indent, $links);
+    }
+
+    /**
+     * @param string $publicDir
+     * @param array  $cacheItems
+     *
+     * @return array
+     */
+    private function processItems($publicDir, array &$cacheItems)
+    {
+        $items = [];
+        foreach ($this as $item) {
+            if (! $item->href || $item->type != 'text/css') {
+                continue;
+            }
+            $localUri  = str_replace($this->baseUrl, '', preg_replace('/\?.*/', '', $publicDir . $item->href));
+            $remoteUri = $item->href;
+            $handle    = curl_init($remoteUri);
+            curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+
+            if (is_file($localUri)) {
+                $cacheItems[] = $localUri;
+                continue;
+            }
+
+            if (curl_exec($handle) !== false) {
+                $cacheItems[] = $remoteUri;
+                continue;
+            }
+
+            $items[] = $item;
+        }
+
+        return $items;
+    }
+
+    /**
+     * @param string $minifiedFile
+     * @param string $cacheDir
+     * @param array  $cacheItems
+     *
+     * @return $this
+     */
+    private function minifyFile($minifiedFile, $cacheDir, array $cacheItems)
+    {
         if (! is_file($this->baseUrl . $minifiedFile)) {
             $minifier = new Minify\CSS();
             array_map(function ($uri) use ($minifier) {
@@ -84,6 +118,18 @@ class HeadLink extends \Zend\View\Helper\HeadLink
             $minifier->minify($cacheDir . $minifiedFile);
         }
 
+        return $this;
+    }
+
+    /**
+     * @param array  $items
+     * @param string $cssDir
+     * @param string $minifiedFile
+     *
+     * @return array
+     */
+    private function generateLinks(array $items, $cssDir, $minifiedFile)
+    {
         $links = [
             $this->itemToString($this->createData([
                 'type'                  => 'text/css',
@@ -97,7 +143,6 @@ class HeadLink extends \Zend\View\Helper\HeadLink
             $links[] = $this->itemToString($item);
         }
 
-        /** @noinspection PhpUndefinedMethodInspection */
-        return $indent . implode($this->escape($this->getSeparator()) . $indent, $links);
+        return $links;
     }
 }
