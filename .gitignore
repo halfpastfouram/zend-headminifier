@@ -2,4 +2,5 @@
 .idea/
 composer.phar
 vendor/
-phpunit.phar
+test/data/cache/*
+!test/data/cache/.gitkeep
