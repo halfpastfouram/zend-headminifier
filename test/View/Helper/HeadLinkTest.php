@@ -110,7 +110,7 @@ class HeadLinkTest extends TestCase
         $contents              = file_get_contents($minifiedFile);
         $firstFilePlaceholder  = '.file1';
         $secondFilePlaceholder = '.file2';
-        $this->assertGreaterThan($firstFilePlaceholder, $secondFilePlaceholder);
+        $this->assertLessThan(strpos($contents, $firstFilePlaceholder), strpos($contents, $secondFilePlaceholder));
     }
 
     /**
