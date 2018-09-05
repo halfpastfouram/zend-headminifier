@@ -50,8 +50,10 @@ class HeadScript extends \Zend\View\Helper\HeadScript
         $cacheItems = [];
         $publicDir  = $this->options['directories']['public'];
         $cacheDir   = $this->options['directories']['cache'];
-        $jsDir      = str_replace($publicDir, '', $cacheDir);
-        $items      = $this->processItems($publicDir, $cacheItems);
+
+        // Process all items. The items that don't require any changes will be returned in $items. The items that will
+        // be cached will be returned in $cacheItems.
+        $items = $this->processItems($publicDir, $cacheItems);
 
         /** @noinspection PhpUndefinedMethodInspection */
         $indent = (null !== $indent)
@@ -60,8 +62,12 @@ class HeadScript extends \Zend\View\Helper\HeadScript
 
         $identifier   = sha1(implode($cacheItems));
         $minifiedFile = "/{$identifier}.min.js";
-        $scripts      = $this->minifyFile($minifiedFile, $cacheDir, $cacheItems)
-                             ->generateScripts($items, $jsDir, $minifiedFile, $indent);
+
+        // Create a minified file containing all cache items. Return the name of the minified file as the last item in
+        // returned in $items.
+        $scripts = $this->minifyFile($minifiedFile, $cacheDir, $cacheItems, $items)
+            // Generate the script tags.
+                        ->generateScripts($items, $indent);
 
         /** @noinspection PhpUndefinedMethodInspection */
         return $indent . implode($this->escape($this->getSeparator()) . $indent, $scripts);
@@ -76,12 +82,12 @@ class HeadScript extends \Zend\View\Helper\HeadScript
     private function processItems($publicDir, array &$cacheItems)
     {
         $items = [];
-        foreach ($this as $item) {
+        foreach ($this as $index => $item) {
             if ($item->type !== 'text/javascript' && (! @$item->attributes['src'] || ! $item->source)) {
                 $items[] = $item;
                 continue;
             }
-            $localUri  = str_replace(
+            $localUri = str_replace(
                 $this->baseUrl,
                 '',
                 preg_replace('/\?.*/', '', $publicDir . @$item->attributes['src'])
@@ -92,17 +98,17 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
 
             if (is_file($localUri)) {
-                $cacheItems[] = $localUri;
+                $cacheItems[$index] = $localUri;
                 continue;
             }
 
             if (curl_exec($handle) !== false) {
-                $cacheItems[] = $remoteUri;
+                $cacheItems[$index] = $remoteUri;
                 continue;
             }
 
             if ($remoteUri || $item->source) {
-                $items[] = $item;
+                $items[$index] = $item;
             }
         }
 
@@ -113,17 +119,22 @@ class HeadScript extends \Zend\View\Helper\HeadScript
      * @param string $minifiedFile
      * @param string $cacheDir
      * @param array  $cacheItems
+     * @param array  $items
      *
      * @return $this
      */
-    private function minifyfile($minifiedFile, $cacheDir, array $cacheItems)
+    private function minifyfile($minifiedFile, $cacheDir, array $cacheItems, array &$items)
     {
-        if (! is_file($this->baseUrl . $minifiedFile)) {
+        if (! is_file($cacheDir . $minifiedFile) && ! empty($cacheItems)) {
             $minifier = new Minify\JS();
             array_map(function ($uri) use ($minifier) {
                 $minifier->add($uri);
             }, $cacheItems);
             $minifier->minify($cacheDir . $minifiedFile);
+
+            $items[] = $this->createData('text/javascript', [
+                'src' => $cacheDir . $minifiedFile,
+            ]);
         }
 
         return $this;
@@ -131,24 +142,18 @@ class HeadScript extends \Zend\View\Helper\HeadScript
 
     /**
      * @param array  $items
-     * @param string $jsDir
-     * @param string $minifiedFile
      * @param string $indent
      *
      * @return array
      */
-    private function generateScripts(array $items, $jsDir, $minifiedFile, $indent)
+    private function generateScripts(array $items, $indent)
     {
         /** @noinspection PhpUndefinedMethodInspection */
         $useCdata    = $this->view ? $this->view->plugin('doctype')->isXhtml() : $this->useCdata;
         $escapeStart = ($useCdata) ? '//<![CDATA[' : '//<!--';
         $escapeEnd   = ($useCdata) ? '//]]>' : '//-->';
 
-        $scripts = [
-            $this->itemToString($this->createData('text/javascript', [
-                'src' => $this->baseUrl . $jsDir . $minifiedFile,
-            ]), $indent, $escapeStart, $escapeEnd),
-        ];
+        $scripts = [];
 
         foreach ($items as $item) {
             $scripts[] = $this->itemToString($item, $indent, $escapeStart, $escapeEnd);

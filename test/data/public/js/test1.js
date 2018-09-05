@@ -1,6 +1,6 @@
 'use strict';
 
-function test123() {
+function firstFile() {
   return 'foo';
 }
 
@@ -9,5 +9,5 @@ function bar(baz) {
 }
 
 document.addEventListener('load', function () {
-  console.log(bar(test123()));
+  console.log(bar(firstFile()));
 });
