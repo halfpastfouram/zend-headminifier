@@ -33,16 +33,12 @@ class HeadScriptFactory implements FactoryInterface
             && ! array_key_exists('script', $applicationConfig['minify_head'])) {
             throw new \Exception('Configuration not available.');
         }
-        $config = $applicationConfig['minify_head']['script'];
-
-        /** @var Request $request */
+        $config  = $applicationConfig['minify_head']['script'];
         $request = $container->get('Request');
-        $baseUrl = '';
 
-        if ($request instanceof Request) {
-            $baseUrl = $request->getBasePath();
-        }
-
-        return new HeadScript($config, $baseUrl);
+        return new HeadScript(
+            $config,
+            $request instanceof Request ? $request->getBasePath() : ''
+        );
     }
 }

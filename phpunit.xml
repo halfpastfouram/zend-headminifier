@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit colors="true" bootstrap="vendor/autoload.php"
+		 beStrictAboutTestsThatDoNotTestAnything="true"
+		 beStrictAboutOutputDuringTests="true">
+	<testsuites>
+		<testsuite name="Factories">
+			<directory>./test/Factory</directory>
+		</testsuite>
+		<testsuite name="ViewHelpers">
+			<directory>./test/View</directory>
+		</testsuite>
+	</testsuites>
+	<filter>
+		<whitelist addUncoveredFilesFromWhitelist="true">
+			<directory>./src</directory>
+		</whitelist>
+	</filter>
+	<logging>
+		<log type="coverage-text"/>
+	</logging>
+</phpunit>

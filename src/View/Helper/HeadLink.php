@@ -8,6 +8,11 @@ use MatthiasMullie\Minify;
  * Class HeadLink
  *
  * @package Halfpastfour\HeadMinifier\View\Helper
+ *
+ * Proxies to container methods:
+ * @method string|int getWhitespace(string | int $indent)
+ * @method string|int getIndent()
+ * @method string getSeparator()
  */
 class HeadLink extends \Zend\View\Helper\HeadLink
 {
@@ -36,7 +41,7 @@ class HeadLink extends \Zend\View\Helper\HeadLink
     }
 
     /**
-     * @param null $indent
+     * @param string|int $indent
      *
      * @return string
      */
@@ -50,20 +55,24 @@ class HeadLink extends \Zend\View\Helper\HeadLink
         $cacheItems = [];
         $publicDir  = $this->options['directories']['public'];
         $cacheDir   = $this->options['directories']['cache'];
-        $cssDir     = str_replace($publicDir, '', $cacheDir);
-        $items      = $this->processItems($publicDir, $cacheItems);
 
-        /** @noinspection PhpUndefinedMethodInspection */
+        // Process all items. The items that don't require any changes will be returned in $items. The items that will
+        // be cached will be returned in $cacheItems.
+        $items = $this->processItems($publicDir, $cacheItems);
+
         $indent = (null !== $indent)
             ? $this->getWhitespace($indent)
             : $this->getIndent();
 
         $identifier   = sha1(implode($cacheItems));
         $minifiedFile = "/{$identifier}.min.css";
-        $links        = $this->minifyFile($minifiedFile, $cacheDir, $cacheItems)
-                             ->generateLinks($items, $cssDir, $minifiedFile);
 
-        /** @noinspection PhpUndefinedMethodInspection */
+        // Create a minified file containing all cache items. Return the name of the minified file as the last item in
+        // returned in $items.
+        $links = $this->minifyFile($minifiedFile, $cacheDir, $cacheItems, $items)
+            // Generate the links
+                      ->generateLinks($items);
+
         return $indent . implode($this->escape($this->getSeparator()) . $indent, $links);
     }
 
@@ -76,7 +85,7 @@ class HeadLink extends \Zend\View\Helper\HeadLink
     private function processItems($publicDir, array &$cacheItems)
     {
         $items = [];
-        foreach ($this as $item) {
+        foreach ($this as $index => $item) {
             if (! $item->href || $item->type != 'text/css') {
                 continue;
             }
@@ -86,16 +95,16 @@ class HeadLink extends \Zend\View\Helper\HeadLink
             curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
 
             if (is_file($localUri)) {
-                $cacheItems[] = $localUri;
+                $cacheItems[$index] = $localUri;
                 continue;
             }
 
             if (curl_exec($handle) !== false) {
-                $cacheItems[] = $remoteUri;
+                $cacheItems[$index] = $remoteUri;
                 continue;
             }
 
-            $items[] = $item;
+            $items[$index] = $item;
         }
 
         return $items;
@@ -105,40 +114,43 @@ class HeadLink extends \Zend\View\Helper\HeadLink
      * @param string $minifiedFile
      * @param string $cacheDir
      * @param array  $cacheItems
+     * @param array  $items
      *
      * @return $this
      */
-    private function minifyFile($minifiedFile, $cacheDir, array $cacheItems)
+    private function minifyFile($minifiedFile, $cacheDir, array $cacheItems, array &$items)
     {
-        if (! is_file($this->baseUrl . $minifiedFile)) {
+        if (! is_file($cacheDir . $minifiedFile) && ! empty($cacheItems)) {
             $minifier = new Minify\CSS();
             array_map(function ($uri) use ($minifier) {
                 $minifier->add($uri);
             }, $cacheItems);
             $minifier->minify($cacheDir . $minifiedFile);
+
+            // Add the minified file tot the list of items.
+            $items[] = $this->createData([
+                'type'                  => 'text/css',
+                'rel'                   => 'stylesheet',
+                'href'                  => $cacheDir . $minifiedFile,
+                'conditionalStylesheet' => false,
+            ]);
         }
 
         return $this;
     }
 
     /**
-     * @param array  $items
-     * @param string $cssDir
-     * @param string $minifiedFile
+     * @param array $items
      *
      * @return array
      */
-    private function generateLinks(array $items, $cssDir, $minifiedFile)
+    private function generateLinks(array $items)
     {
-        $links = [
-            $this->itemToString($this->createData([
-                'type'                  => 'text/css',
-                'rel'                   => 'stylesheet',
-                'href'                  => $this->baseUrl . $cssDir . $minifiedFile,
-                'conditionalStylesheet' => false,
-            ])),
-        ];
+        if (empty($items)) {
+            return [];
+        }
 
+        $links = [];
         foreach ($items as $item) {
             $links[] = $this->itemToString($item);
         }

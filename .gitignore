@@ -2,3 +2,5 @@
 .idea/
 composer.phar
 vendor/
+test/data/cache/*
+!test/data/cache/.gitkeep
