@@ -68,7 +68,7 @@ class HeadLink extends \Zend\View\Helper\HeadLink
         // returned in $items.
         $links = $this->minifyFile($minifiedFile, $cacheDir, $cacheItems, $items)
             // Generate the links
-                      ->generateLinks($items, $cssDir, $minifiedFile);
+                      ->generateLinks($items);
 
         /** @noinspection PhpUndefinedMethodInspection */
         return $indent . implode($this->escape($this->getSeparator()) . $indent, $links);
