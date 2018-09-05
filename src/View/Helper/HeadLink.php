@@ -50,7 +50,6 @@ class HeadLink extends \Zend\View\Helper\HeadLink
         $cacheItems = [];
         $publicDir  = $this->options['directories']['public'];
         $cacheDir   = $this->options['directories']['cache'];
-        $cssDir     = str_replace($publicDir, '', $cacheDir);
 
         // Process all items. The items that don't require any changes will be returned in $items. The items that will
         // be cached will be returned in $cacheItems.
