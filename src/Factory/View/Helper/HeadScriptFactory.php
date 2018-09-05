@@ -38,7 +38,7 @@ class HeadScriptFactory implements FactoryInterface
 
         return new HeadScript(
             $config,
-            $baseUrl = $request instanceof Request ? $request->getBasePath() : ''
+            $request instanceof Request ? $request->getBasePath() : ''
         );
     }
 }

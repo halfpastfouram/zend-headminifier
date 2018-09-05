@@ -38,7 +38,7 @@ class HeadLinkFactory implements FactoryInterface
 
         return new HeadLink(
             $config,
-            $baseUrl = $request instanceof Request ? $request->getBasePath() : ''
+            $request instanceof Request ? $request->getBasePath() : ''
         );
     }
 }
