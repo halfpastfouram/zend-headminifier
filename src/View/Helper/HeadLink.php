@@ -8,6 +8,11 @@ use MatthiasMullie\Minify;
  * Class HeadLink
  *
  * @package Halfpastfour\HeadMinifier\View\Helper
+ *
+ * Proxies to container methods:
+ * @method string|int getWhitespace(string | int $indent)
+ * @method string|int getIndent()
+ * @method string getSeparator()
  */
 class HeadLink extends \Zend\View\Helper\HeadLink
 {
@@ -36,7 +41,7 @@ class HeadLink extends \Zend\View\Helper\HeadLink
     }
 
     /**
-     * @param null $indent
+     * @param string|int $indent
      *
      * @return string
      */
@@ -55,7 +60,6 @@ class HeadLink extends \Zend\View\Helper\HeadLink
         // be cached will be returned in $cacheItems.
         $items = $this->processItems($publicDir, $cacheItems);
 
-        /** @noinspection PhpUndefinedMethodInspection */
         $indent = (null !== $indent)
             ? $this->getWhitespace($indent)
             : $this->getIndent();
@@ -69,7 +73,6 @@ class HeadLink extends \Zend\View\Helper\HeadLink
             // Generate the links
                       ->generateLinks($items);
 
-        /** @noinspection PhpUndefinedMethodInspection */
         return $indent . implode($this->escape($this->getSeparator()) . $indent, $links);
     }
 
