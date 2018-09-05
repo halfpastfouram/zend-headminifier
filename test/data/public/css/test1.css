@@ -1,0 +1,14 @@
+.file1
+{
+	content: 'This is the first file';
+}
+
+html, body
+{
+	margin: 0;
+}
+
+body
+{
+	font-family: Arial, sans-serif;
+}

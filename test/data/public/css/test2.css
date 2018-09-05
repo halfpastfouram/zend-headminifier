@@ -1,0 +1,16 @@
+.file2
+{
+	content: 'This is the second file';
+}
+
+table
+{
+	width:  100%;
+	border: solid 1px #000;
+}
+
+table thead th
+{
+	background: #000;
+	color:      #fff;
+}
