@@ -3,11 +3,17 @@
 namespace Halfpastfour\HeadMinifier\View\Helper;
 
 use MatthiasMullie\Minify;
+use Zend\View\Renderer\PhpRenderer;
 
 /**
  * Class HeadScript
  *
  * @package Halfpastfour\HeadMinifier\View\Helper
+ *
+ * Proxies to container methods:
+ * @method string|int getWhitespace(string | int $indent)
+ * @method string|int getIndent()
+ * @method string getSeparator()
  */
 class HeadScript extends \Zend\View\Helper\HeadScript
 {
@@ -55,7 +61,6 @@ class HeadScript extends \Zend\View\Helper\HeadScript
         // be cached will be returned in $cacheItems.
         $items = $this->processItems($publicDir, $cacheItems);
 
-        /** @noinspection PhpUndefinedMethodInspection */
         $indent = (null !== $indent)
             ? $this->getWhitespace($indent)
             : $this->getIndent();
@@ -69,7 +74,6 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             // Generate the script tags.
                         ->generateScripts($items, $indent);
 
-        /** @noinspection PhpUndefinedMethodInspection */
         return $indent . implode($this->escape($this->getSeparator()) . $indent, $scripts);
     }
 
@@ -141,6 +145,22 @@ class HeadScript extends \Zend\View\Helper\HeadScript
     }
 
     /**
+     * @return bool
+     */
+    private function isUseCdata()
+    {
+        $view     = $this->view;
+        $useCdata = $this->useCdata;
+        if ($view instanceof PhpRenderer) {
+            /** @var \Zend\View\Helper\Doctype $plugin */
+            $plugin   = $view->plugin('doctype');
+            $useCdata = $plugin->isXhtml();
+        }
+
+        return $useCdata;
+    }
+
+    /**
      * @param array  $items
      * @param string $indent
      *
@@ -148,8 +168,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
      */
     private function generateScripts(array $items, $indent)
     {
-        /** @noinspection PhpUndefinedMethodInspection */
-        $useCdata    = $this->view ? $this->view->plugin('doctype')->isXhtml() : $this->useCdata;
+        $useCdata    = $this->isUseCdata();
         $escapeStart = ($useCdata) ? '//<![CDATA[' : '//<!--';
         $escapeEnd   = ($useCdata) ? '//]]>' : '//-->';
 
