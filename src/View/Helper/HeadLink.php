@@ -69,7 +69,7 @@ class HeadLink extends \Zend\View\Helper\HeadLink
 
         // Create a minified file containing all cache items. Return the name of the minified file as the last item in
         // returned in $items.
-        $links = $this->minifyFile($minifiedFile, $cacheDir, $cacheItems, $items)
+        $links = $this->minifyFile($minifiedFile, $publicDir, $cacheDir, $cacheItems, $items)
             // Generate the links
                       ->generateLinks($items);
 
@@ -111,27 +111,47 @@ class HeadLink extends \Zend\View\Helper\HeadLink
     }
 
     /**
-     * @param string $minifiedFile
+     * @param string $publicDir
+     * @param string $cacheDir
+     * @param string $minifiedFileName
+     *
+     * @return string
+     */
+    private function generateMinifiedFilePath($publicDir, $cacheDir, $minifiedFileName)
+    {
+        $minifiedFilePath = $cacheDir . $minifiedFileName;
+        if (strpos($minifiedFilePath, $publicDir) === 0) {
+            $minifiedFilePath = substr($minifiedFilePath, strlen($publicDir)) ?: $minifiedFilePath;
+        }
+
+        return $this->baseUrl . $minifiedFilePath;
+    }
+
+    /**
+     * @param string $minifiedFileName
+     * @param string $publicDir
      * @param string $cacheDir
      * @param array  $cacheItems
      * @param array  $items
      *
      * @return $this
      */
-    private function minifyFile($minifiedFile, $cacheDir, array $cacheItems, array &$items)
+    private function minifyFile($minifiedFileName, $publicDir, $cacheDir, array $cacheItems, array &$items)
     {
-        if (! is_file($cacheDir . $minifiedFile) && ! empty($cacheItems)) {
-            $minifier = new Minify\CSS();
-            array_map(function ($uri) use ($minifier) {
-                $minifier->add($uri);
-            }, $cacheItems);
-            $minifier->minify($cacheDir . $minifiedFile);
+        if (! empty($cacheItems)) {
+            if (! is_file($cacheDir . $minifiedFileName)) {
+                $minifier = new Minify\CSS();
+                array_map(function ($uri) use ($minifier) {
+                    $minifier->add($uri);
+                }, $cacheItems);
+                $minifier->minify($cacheDir . $minifiedFileName);
+            }
 
             // Add the minified file tot the list of items.
             $items[] = $this->createData([
                 'type'                  => 'text/css',
                 'rel'                   => 'stylesheet',
-                'href'                  => $cacheDir . $minifiedFile,
+                'href'                  => $this->generateMinifiedFilePath($publicDir, $cacheDir, $minifiedFileName),
                 'conditionalStylesheet' => false,
             ]);
         }
