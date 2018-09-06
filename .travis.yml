@@ -1,0 +1,36 @@
+language: php
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+
+php:
+  - '7.1'
+  - '7.2'
+  - nightly
+
+before_install:
+  - composer self-update
+  - mkdir build/logs -p
+
+install:
+  - composer install
+
+script:
+  - phpunit
+  - composer cs-check
+
+after_success:
+  - vendor/bin/test-reporter
+
+after_script:
+  - rm -rf build/logs
+
+matrix:
+  allow_failures:
+    - php: nightly
+
+branches:
+  only:
+  - master
+  - dev
