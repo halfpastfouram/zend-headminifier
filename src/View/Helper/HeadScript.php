@@ -147,13 +147,17 @@ class HeadScript extends \Zend\View\Helper\HeadScript
      */
     private function minifyFile($minifiedFileName, $publicDir, $cacheDir, array $cacheItems, array &$items)
     {
-        if (! is_file($cacheDir . $minifiedFileName) && ! empty($cacheItems)) {
-            $minifier = new Minify\JS();
-            array_map(function ($uri) use ($minifier) {
-                $minifier->add($uri);
-            }, $cacheItems);
-            $minifier->minify($cacheDir . $minifiedFileName);
+        if (! empty($cacheItems)) {
+            if (! is_file($cacheDir . $minifiedFileName)) {
+                $minifier = new Minify\JS();
+                array_map(function ($uri) use ($minifier) {
+                    $minifier->add($uri);
+                }, $cacheItems);
+                $minifier->minify($cacheDir . $minifiedFileName);
 
+            }
+
+            // Add the minified file to the list of items.
             $items[] = $this->createData('text/javascript', [
                 'src' => $this->generateMinifiedFilePath($publicDir, $cacheDir, $minifiedFileName),
             ]);
@@ -195,6 +199,8 @@ class HeadScript extends \Zend\View\Helper\HeadScript
         foreach ($items as $item) {
             $scripts[] = $this->itemToString($item, $indent, $escapeStart, $escapeEnd);
         }
+
+        var_dump($scripts);
 
         return $scripts;
     }
