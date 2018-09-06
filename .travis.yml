@@ -24,11 +24,10 @@ script:
   - composer cs-check
 
 after_success:
-  - vendor/bin/test-reporter
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 
 after_script:
   - rm -rf build/logs
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 
 matrix:
   allow_failures:
