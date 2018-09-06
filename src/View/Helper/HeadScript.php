@@ -154,7 +154,6 @@ class HeadScript extends \Zend\View\Helper\HeadScript
                     $minifier->add($uri);
                 }, $cacheItems);
                 $minifier->minify($cacheDir . $minifiedFileName);
-
             }
 
             // Add the minified file to the list of items.
