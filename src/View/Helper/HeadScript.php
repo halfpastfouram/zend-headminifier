@@ -25,6 +25,16 @@ class HeadScript extends \Zend\View\Helper\HeadScript
     /**
      * @var string
      */
+    private $publicDir = '';
+
+    /**
+     * @var string
+     */
+    private $cacheDir = '';
+
+    /**
+     * @var string
+     */
     private $baseUrl = '';
 
     /**
@@ -35,14 +45,16 @@ class HeadScript extends \Zend\View\Helper\HeadScript
      */
     public function __construct(array $config, string $baseUrl)
     {
-        $this->options = $config;
-        $this->baseUrl = $baseUrl;
+        $this->options   = $config;
+        $this->publicDir = $this->options['directories']['public'];
+        $this->cacheDir  = $this->options['directories']['cache'];
+        $this->baseUrl   = $baseUrl;
 
         parent::__construct();
     }
 
     /**
-     * @param null $indent
+     * @param string $indent
      *
      * @return string
      */
@@ -54,12 +66,9 @@ class HeadScript extends \Zend\View\Helper\HeadScript
         }
 
         $cacheItems = [];
-        $publicDir  = $this->options['directories']['public'];
-        $cacheDir   = $this->options['directories']['cache'];
-
         // Process all items. The items that don't require any changes will be returned in $items. The items that will
         // be cached will be returned in $cacheItems.
-        $items = $this->processItems($publicDir, $cacheItems);
+        $items = $this->processItems($cacheItems);
 
         $indent = (null !== $indent)
             ? $this->getWhitespace($indent)
@@ -70,7 +79,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
 
         // Create a minified file containing all cache items. Return the name of the minified file as the last item in
         // returned in $items.
-        $scripts = $this->minifyFile($minifiedFile, $publicDir, $cacheDir, $cacheItems, $items)
+        $scripts = $this->minifyFile($minifiedFile, $cacheItems, $items)
             // Generate the script tags.
                         ->generateScripts($items, $indent);
 
@@ -78,12 +87,11 @@ class HeadScript extends \Zend\View\Helper\HeadScript
     }
 
     /**
-     * @param string $publicDir
-     * @param array  $cacheItems
+     * @param array $cacheItems
      *
      * @return array
      */
-    private function processItems($publicDir, array &$cacheItems)
+    private function processItems(array &$cacheItems): array
     {
         $items = [];
         foreach ($this as $index => $item) {
@@ -94,7 +102,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
             $localUri = str_replace(
                 $this->baseUrl,
                 '',
-                preg_replace('/\?.*/', '', $publicDir . @$item->attributes['src'])
+                preg_replace('/\?.*/', '', $this->publicDir . @$item->attributes['src'])
             );
 
             $remoteUri = @$item->attributes['src'];
@@ -120,17 +128,15 @@ class HeadScript extends \Zend\View\Helper\HeadScript
     }
 
     /**
-     * @param string $publicDir
-     * @param string $cacheDir
      * @param string $minifiedFileName
      *
      * @return string
      */
-    private function generateMinifiedFilePath($publicDir, $cacheDir, $minifiedFileName)
+    private function generateMinifiedFilePath(string $minifiedFileName): string
     {
-        $minifiedFilePath = $cacheDir . $minifiedFileName;
-        if (strpos($minifiedFilePath, $publicDir) === 0) {
-            $minifiedFilePath = substr($minifiedFilePath, strlen($publicDir)) ?: $minifiedFilePath;
+        $minifiedFilePath = $this->cacheDir . $minifiedFileName;
+        if (strpos($minifiedFilePath, $this->publicDir) === 0) {
+            $minifiedFilePath = substr($minifiedFilePath, strlen($this->publicDir)) ?: $minifiedFilePath;
         }
 
         return $this->baseUrl . $minifiedFilePath;
@@ -138,27 +144,25 @@ class HeadScript extends \Zend\View\Helper\HeadScript
 
     /**
      * @param string $minifiedFileName
-     * @param string $publicDir
-     * @param string $cacheDir
      * @param array  $cacheItems
      * @param array  $items
      *
      * @return $this
      */
-    private function minifyFile($minifiedFileName, $publicDir, $cacheDir, array $cacheItems, array &$items)
+    private function minifyFile(string $minifiedFileName, array $cacheItems, array &$items): HeadScript
     {
         if (! empty($cacheItems)) {
-            if (! is_file($cacheDir . $minifiedFileName)) {
+            if (! is_file($this->cacheDir . $minifiedFileName)) {
                 $minifier = new Minify\JS();
                 array_map(function ($uri) use ($minifier) {
                     $minifier->add($uri);
                 }, $cacheItems);
-                $minifier->minify($cacheDir . $minifiedFileName);
+                $minifier->minify($this->cacheDir . $minifiedFileName);
             }
 
             // Add the minified file to the list of items.
             $items[] = $this->createData('text/javascript', [
-                'src' => $this->generateMinifiedFilePath($publicDir, $cacheDir, $minifiedFileName),
+                'src' => $this->generateMinifiedFilePath($minifiedFileName),
             ]);
         }
 
@@ -168,7 +172,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
     /**
      * @return bool
      */
-    private function isUseCdata()
+    private function isUseCdata(): bool
     {
         $view     = $this->view;
         $useCdata = $this->useCdata;
@@ -187,7 +191,7 @@ class HeadScript extends \Zend\View\Helper\HeadScript
      *
      * @return array
      */
-    private function generateScripts(array $items, $indent)
+    private function generateScripts(array $items, $indent): array
     {
         $useCdata    = $this->isUseCdata();
         $escapeStart = ($useCdata) ? '//<![CDATA[' : '//<!--';
@@ -198,8 +202,6 @@ class HeadScript extends \Zend\View\Helper\HeadScript
         foreach ($items as $item) {
             $scripts[] = $this->itemToString($item, $indent, $escapeStart, $escapeEnd);
         }
-
-        var_dump($scripts);
 
         return $scripts;
     }
